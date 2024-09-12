@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+
+	<select id="selectBoardTypeList" resultMap="boardTypeMap">
+		SELECT *
+		FROM BOARD_TYPE
+		ORDER BY BOARD_CD
+	</select>
+	
+	<resultMap type="boardType" id="boardTypeMap">
+		<id column="BOARD_CD" property="boardCode"/>
+		<result column="BOARD_NAME" property="boardName"/>
+	</resultMap>
+	
+	<select id="selectList" resultType="board">
+		<!-- SELECT
+			BOARD_NO,
+			BOARD_TITLE,
+			USER_NAME AS BOARD_WRITER,
+			COUNT,
+			CREATE_DATE
+		FROM BOARD B
+		LEFT JOIN MEMBER M ON BOARD_WRITER = USER_NO
+		WHERE B.STATUS = 'Y'
+		ORDER BY BOARD_NO DESC -->
+		
+	<!-- ROWNUM 방식의 조회 -->
+	    <!-- SELECT * 
+	    FROM (SELECT B.* , ROWNUM RNUM
+	          FROM (SELECT
+	                    BOARD_NO,
+	                    BOARD_TITLE,
+	                    USER_NAME AS BOARD_WRITER,
+	                    COUNT,
+	                    CREATE_DATE
+	                FROM BOARD B
+	                LEFT JOIN MEMBER M ON BOARD_WRITER = USER_NO
+	                WHERE B.STATUS = 'Y'
+	                ORDER BY BOARD_NO DESC
+	                ) B
+	          ) C
+		WHERE RNUM <![CDATA[ >= ]]> #{startRow} AND RNUM <![CDATA[ <= ]]> #{endRow} -->
+		
+	<!-- MyBatis의 RowBounds객체를 이용한 페이징 처리 -->
+	<!-- 검색기능 추가 (if태그) -->
+		SELECT
+			BOARD_NO,
+			BOARD_TITLE,
+			USER_NAME AS BOARD_WRITER,
+			COUNT,
+			CREATE_DATE
+		FROM BOARD B
+		LEFT JOIN MEMBER M ON BOARD_WRITER = USER_NO
+		WHERE B.STATUS = 'Y' AND BOARD_CD = #{boardCode}
+		<if test="keyword != null and keyword != ''">
+			AND
+			<choose>
+				<when test="condition == 'title'">
+					BOARD_TITLE LIKE '%'||#{keyword}||'%'
+				</when>
+				
+				<when test="condition == 'writer'">
+					USER_NAME LIKE '%'||#{keyword}||'%'
+				</when>
+				
+				<when test="condition == 'content'">
+					BOARD_CONTENT LIKE '%'||#{keyword}||'%'
+				</when>
+				
+				<when test="condition == 'titleAndContent'">
+					(BOARD_TITLE LIKE '%'||#{keyword}||'%'
+						OR
+					BOARD_CONTENT LIKE '%'||#{keyword}||'%')
+				</when>
+			</choose>
+		</if>
+		ORDER BY BOARD_NO DESC
+	    
+	</select>
+	
+	<select id="selectListCount" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM BOARD B
+		LEFT JOIN MEMBER M ON BOARD_WRITER = USER_NO
+		WHERE B.STATUS = 'Y' AND BOARD_CD = #{boardCode}
+		<if test="keyword != null and keyword != ''">
+			AND
+			<choose>
+				<when test="condition == 'title'">
+					BOARD_TITLE LIKE '%'||#{keyword}||'%'
+				</when>
+				
+				<when test="condition == 'writer'">
+					USER_NAME LIKE '%'||#{keyword}||'%'
+				</when>
+				
+				<when test="condition == 'content'">
+					BOARD_CONTENT LIKE '%'||#{keyword}||'%'
+				</when>
+				
+				<when test="condition == 'titleAndContent'">
+					(BOARD_TITLE LIKE '%'||#{keyword}||'%'
+						OR
+					BOARD_CONTENT LIKE '%'||#{keyword}||'%')
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	
+	<insert id="insertBoard" parameterType="board" useGeneratedKeys="true">
+	
+		<selectKey keyProperty="boardNo" resultType="int" order="BEFORE">
+			SELECT SEQ_BNO.NEXTVAL FROM DUAL
+		</selectKey>
+	
+		INSERT INTO BOARD
+		VALUES(
+			#{boardNo},
+			#{boardTitle},
+			#{boardContent},
+			#{boardCd},
+			#{boardWriter},
+			DEFAULT,
+			DEFAULT,
+			DEFAULT
+		)
+	</insert>
+	
+	
+	<insert id="insertBoardImg">
+		INSERT INTO BOARD_IMG
+		(
+			BOARD_IMG_NO,
+			ORIGIN_NAME,
+			CHANGE_NAME,
+			REF_BNO,
+			IMG_LEVEL
+		) 
+		VALUES(
+			SEQ_IMG_NO.NEXTVAL,
+			#{originName},
+			#{changeName},
+			#{refBno},
+			#{imgLevel}
+		)
+		
+	</insert>
+	
+	
+	<resultMap type="boardExt" id="boardExtMap">
+	
+		<id column="BOARD_NO" property="boardNo"/>
+		<result column="BOARD_TITLE" property="boardTitle"/>
+		<result column="USER_NAME" property="userName"/>
+		<result column="CREATE_DATE" property="createDate"/>
+		<result column="COUNT" property="count"/>
+		<result column="BOARD_CONTENT" property="boardContent"/>
+		<result column="BOARD_CD" property="boardCd"/>
+		
+		<!-- 결과값을 vo클래스로 매핑할 때 사용하는 태그 -->
+		<association property="attachment">
+			<id column="BOARD_IMG_NO" property="boardImgNo"/>
+			<result column="ORIGIN_NAME" property="originName"/>
+			<result column="CHANGE_NAME" property="changeName"/>
+			<result column="IMG_LEVEL" property="imgLevel"/>
+		</association>
+		
+		<!--	=== collection에서 사용 가능한 속성들 ===
+			- property : 매핑시킬 필드명
+			- javaType : 반환시킬 자바의 자료형
+			- ofType : 제네익 타입
+		-->
+		<collection property="replyList" javaType="java.util.List" ofType="reply">
+			<id column="REPLY_NO" property="replyNo"/>
+			<result column="REPLY_CONTENT" property="replyContent"/>
+			<result column="REPLY_CREATE_DATE" property="createDate"/>
+			<result column="REF_BNO" property="refBno"/>
+			<result column="REPLY_WRITER" property="replyWriter"/>
+			<result column="REPLY_USER_NAME" property="userName"/>
+		</collection>
+		
+	</resultMap>
+	
+	
+	<resultMap type="boardExt" id="boardExtMap2">
+	
+		<id column="BOARD_NO" property="boardNo"/>
+		<result column="BOARD_TITLE" property="boardTitle"/>
+		<result column="USER_NAME" property="userName"/>
+		<result column="CREATE_DATE" property="createDate"/>
+		<result column="COUNT" property="count"/>
+		<result column="BOARD_CONTENT" property="boardContent"/>
+		<result column="BOARD_CD" property="boardCd"/>
+		
+		<!-- 결과값을 vo클래스로 매핑할 때 사용하는 태그 -->
+		<association property="attachment">
+			<id column="BOARD_IMG_NO" property="boardImgNo"/>
+			<result column="ORIGIN_NAME" property="originName"/>
+			<result column="CHANGE_NAME" property="changeName"/>
+			<result column="IMG_LEVEL" property="imgLevel"/>
+		</association>
+		
+		<!-- 조회된 BOARD_NO값을 가지고 selectReplyList를 한번 더 조회하는 서브쿼리 형태 -->
+		<collection property="replyList" javaType="java.util.List" ofType="reply"
+			select="selectReplyList" column="BOARD_NO"></collection>
+		
+	</resultMap>
+	
+	
+	<select id="selectBoard" resultMap="boardExtMap">
+		SELECT
+		    BOARD_NO, 
+		    BOARD_TITLE,
+		    M.USER_NAME , 
+		    B.CREATE_DATE,
+		    COUNT,
+		    BOARD_CONTENT,
+		    BOARD_CD,
+		    
+		    BOARD_IMG_NO,
+		    ORIGIN_NAME,
+		    CHANGE_NAME,
+		    IMG_LEVEL,
+		    
+		    REPLY_NO,
+		    REPLY_CONTENT,
+		    R.CREATE_DATE AS REPLY_CREATE_DATE,
+		    R.REF_BNO,
+		    REPLY_WRITER,
+		    M2.USER_NAME AS REPLY_USER_NAME
+		    
+		FROM BOARD B
+		LEFT JOIN MEMBER M ON (BOARD_WRITER = M.USER_NO)
+		LEFT JOIN BOARD_IMG BI ON (BOARD_NO = BI.REF_BNO)
+		LEFT JOIN REPLY R ON R.REF_BNO = BOARD_NO
+		LEFT JOIN MEMBER M2 ON REPLY_WRITER = M2.USER_NO
+		WHERE B.STATUS = 'Y' AND BOARD_NO = #{boardNo}
+	</select>
+	
+	
+	<select id="selectBoard2" resultMap="boardExtMap2">
+		SELECT
+		    BOARD_NO, 
+		    BOARD_TITLE,
+		    M.USER_NAME , 
+		    B.CREATE_DATE,
+		    COUNT,
+		    BOARD_CONTENT,
+		    BOARD_CD,
+		    
+		    BOARD_IMG_NO,
+		    ORIGIN_NAME,
+		    CHANGE_NAME,
+		    IMG_LEVEL
+		    
+		FROM BOARD B
+		LEFT JOIN MEMBER M ON (BOARD_WRITER = M.USER_NO)
+		LEFT JOIN BOARD_IMG BI ON (BOARD_NO = BI.REF_BNO)
+		WHERE B.STATUS = 'Y' AND BOARD_NO = #{boardNo}
+	</select>
+	
+	
+	<select id="selectReplyList" resultType="reply">
+		SELECT
+			REPLY_NO,
+			REPLY_CONTENT,
+			REF_BNO,
+			USER_NAME,
+			REPLY_WRITER,
+			CREATE_DATE,
+			REPLY.STATUS
+		FROM REPLY
+		JOIN MEMBER ON REPLY_WRITER = USER_NO
+		WHERE REF_BNO = #{boardNo}
+			AND REPLY.STATUS = 'Y'
+	</select>
+	
+	
+	<update id="increaseCount">
+		UPDATE BOARD SET
+		COUNT = COUNT + 1
+		WHERE BOARD_NO = #{boardNo}
+	</update>
+	
+	
+	<update id="updateBoard" parameterType="board">
+		UPDATE BOARD
+		SET BOARD_TITLE = #{boardTitle},
+			BOARD_CONTENT = #{boardContent}
+		WHERE BOARD_NO = #{boardNo}
+	</update>
+	
+	
+	<update id="updateBoardImg" parameterType="boardImg">
+		UPDATE BOARD_IMG
+		SET ORIGIN_NAME = #{originName},
+			CHANGE_NAME = #{changeName}
+		WHERE BOARD_IMG_NO = #{boardImgNo}
+	</update>
+	
+	
+	<delete id="deleteBoardImg">
+		DELETE FROM BOARD_IMG
+		WHERE BOARD_IMG_NO IN (#{deleteList})
+	</delete>
+	
+	
+	<select id="selectFileList" resultType="string">
+		SELECT
+		    '/resources/images/board/' || BOARD_CD || '/' || CHANGE_NAME
+		FROM BOARD_IMG
+		JOIN BOARD ON BOARD_NO = REF_BNO
+	</select>
+	
+	
+	
+
+</mapper>
+
+
+
+
+
+

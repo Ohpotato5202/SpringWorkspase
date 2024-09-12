@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket-4.3.xsd
+		http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+	
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<!-- === mvc관련 어노테이션들 활성화 === -->
+	<!-- @Controller, @Service, @Repository, ... -->
+	<annotation-driven />
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+	<!-- resources : 정적 자원들에 대한 매핑 처리 -->
+	<resources mapping="/resources/**" location="/resources/" />
+
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<!-- 주소 자동완성 도구 -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+	
+	<!--	===== context:component-scan =====
+		: base-package에 등록된 패키지와 그 하위에 존재하는 모든 패키지를 scan하여 어노테이션이 붙은 클래스를 bean객체로 등록.
+		cf) bean : 스프링 프레임워크에서 관리하는 자바 객체.
+	-->
+	<context:component-scan base-package="com.kh.spring" />
+	
+	<!--======================= 기본 세팅 끝 ==================================-->
+	
+	
+	<!--================== 비동기 요청 처리를 위한 jsonView bean객체 등록 ============-->
+	<beans:bean id="jsonView" class="net.sf.json.spring.web.servlet.view.JsonView">
+		<beans:property name="contentType" value="application/json; charset=utf-8"/>
+	</beans:bean>
+	
+	<beans:bean id="viewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver">
+		<!-- 처리순서가 1순위로 처리되도록 하고 올바른 bean객체를 찾지 못한 경우 기본 viewResolver가 작동하게끔 처리 -->
+		<beans:property name="order" value="1"/>
+	</beans:bean>
+	
+	
+	<!-- ==================== 인터셉터 등록 영역 시작 =============================== -->
+	<!--	=== Interceptor ===  
+		: 디스패쳐 서블릿이 컨트롤러로 요청내용을 전달할 때 인터셉터가 중간에 요청을 가로챈다.
+			=> 로그인 체크, 권한 체크, 프로그램 실행시간 체크, 로그 확인 등에 사용
+	-->
+	<interceptors>
+		<interceptor>
+			<mapping path="/**"/>
+			<beans:bean class="com.kh.spring.common.interceptor.BoardTypeInterceptor"/>
+		</interceptor>
+		
+		<!-- 사용자 정보를 로깅처리 -->
+		<interceptor>
+			<mapping path="/**"/>
+			<beans:bean class="com.kh.spring.common.interceptor.LoggingInterceptor"/>
+		</interceptor>
+		
+		<!-- 로그인 체크여부 인터셉터 -->
+		<interceptor>
+			<mapping path="/board/**"/>
+			<mapping path="/chat/**"/>
+			
+			<!-- 제외할 url -->
+			<exclude-mapping path="/board/list/**"/>
+			
+			<beans:bean class="com.kh.spring.common.interceptor.LoginInterceptor"/>
+		</interceptor>
+		
+	</interceptors>
+	<!-- ==================== 인터셉터 등록 영역 종료 =============================== -->
+
+
+
+	<!-- ====================== 웹소켓 등록 영역 시작 ============================== -->	
+	<!-- 웹소켓으로 연결 요청, 메시지 전송 등의 기능을 수행할 클래스의 별칭(bean객체의 이름) : chatWebsocket -->
+	<websocket:handlers>
+		<!-- 웹소켓으로 연결 요청 주소를 처리할 bean객체 대입 -->
+		<websocket:mapping handler="chatWebsocket" path="/chat"/>
+		
+		<websocket:handshake-interceptors>
+			<!-- http통신에서 request와 response를 가로챈 후 httpSession의 정보를 WebSocketSession에 넣어주는 객체 -->
+			<beans:bean class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor"/>
+		</websocket:handshake-interceptors>	
+		
+		<!-- sockjs라이브러리를 통해 만들어진 웹소켓 객체임을 의미한다. -->
+		<websocket:sockjs />
+	</websocket:handlers>
+	<!-- ====================== 웹소켓 등록 영역 종료 ============================== -->	
+	
+	
+	<!-- =========================== AOP 시작 ==================================== -->
+	<aop:aspectj-autoproxy proxy-target-class="false"/>
+	<!--
+		- proxy-target-class : 프록시 객체를 생성할 때 interface를 구현한 객체 혹은 class를 상속받은 객체로 생성할지 결정하는 속성  
+	
+		- 기본값 : true ==> 프록시 객체 생성시 class로 생성.(타겟 객체의 메서드를 모두 오버라이딩한 객체)
+				 false ==> 인터페이스로 생성함.
+		
+		- aop : 내가 만든 공통 코드를 모듈로 관리하고자 할 때 메서드 단위로 적용시켜야 할 코드가 있는 경우 
+			interceptor로 관리하지 못하는 경우 사용한다.
+			(=> interceptor는 dispatcher가 controller를 찾기 전에 실행)
+			
+		- interceptor : 디스패쳐 서블릿이 컨트롤러의 메서드를 호출하기 전/후로 나누어서 실행하기 때문에
+			controller에게 전달하기 전의 request, response의 데이터를 처리하기에 좋다.
+			
+			===== 스프링의 요청 / 응답 흐름 =====
+		요청 -> Filter -> DispatcherServlet -> Interceptor -> Controller -> AOP -> Service -> AOP -> DAO
+																									| DB에서 요청 처리
+		요청 <- Filter <- DispatcherServlet <- Interceptor <- Controller <- AOP <- Service <- AOP <->DAO
+	-->
+	<!-- =========================== AOP 종료 ==================================== -->
+	
+	
+	
+	
+	
+	
+</beans:beans>
+
+
+
+
+
+
+
+
+
+

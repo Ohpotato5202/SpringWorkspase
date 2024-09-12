@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="member">
+
+	<!-- 비밀번호 암호화 처리 전 sql문 -->
+	<!-- <select id="login" resultType="member">
+		SELECT
+			*
+		FROM MEMBER
+		WHERE USER_ID = #{userId} 
+			AND USER_PWD = #{userPwd} 
+			AND STATUS = 'Y'
+	</select> -->
+	
+	<!-- 비밀번호 암호화 처리 후 sql문 -->
+	<select id="login" resultType="member">
+		SELECT
+			*
+		FROM MEMBER
+		WHERE USER_ID = #{userId} 
+			AND STATUS = 'Y'
+	</select>
+	
+	<insert id="insertMember">
+		INSERT INTO MEMBER VALUES(
+			SEQ_UNO.NEXTVAL,
+			#{userId},
+			#{userPwd},
+			#{userName},
+			#{email},
+			#{birthday},
+			#{gender},
+			#{phone},
+			#{address},
+			DEFAULT,
+			DEFAULT,
+			DEFAULT,
+			DEFAULT
+		)
+	</insert>
+	
+	<update id="updateMember">
+		UPDATE MEMBER
+		SET EMAIL = #{email},
+			BIRTHDAY = #{birthday},
+			GENDER = #{gender},
+			PHONE = #{phone},
+			USER_NAME = #{userName},
+			ADDRESS = #{address},
+			MODIFY_DATE = SYSDATE
+		WHERE USER_ID = #{userId} AND STATUS = 'Y'
+	</update>
+	
+	<select id="idCheck" resultType="int">
+		SELECT COUNT(*) 
+		FROM MEMBER
+		WHERE USER_ID = #{userId}
+	</select>
+	
+</mapper>

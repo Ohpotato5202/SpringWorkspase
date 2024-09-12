@@ -1,0 +1,28 @@
+1719884890897	Rename resource 'MemberManagement.jsp'
+1719885543620	Rename resource 'userListForm.jsp'
+1719891173680	Rename resource 'searchUserForm.jsp'
+1719893147475	Rename resource 'insertAsk.jsp'
+1719893508010	Rename resource 'Ask.jsp'
+1719899178247	Delete element
+1719907379272	Delete element
+1719966780617	Rename resource 'reviewm.jsp'
+1719973737290	Delete element
+1719993698924	Delete element
+1719993709102	Rename resource 'searchUser.jsp'
+1719994887706	Rename resource 'userList.jsp'
+1720055385679	Rename resource 'searchUser.jsp'
+1720055389559	Delete element
+1720060218543	Rename package 'com.kh.winepicker.user.model.dao'
+1720060226025	Rename package 'com.kh.winepicker.user.model.service'
+1720060240923	Rename package 'com.kh.winepicker.user.model.vo.User.service'
+1720060449250	Rename package 'com.kh.winepicker.user.model.vo.User'
+1720060458222	Rename package 'com.kh.winepicker.user.model.vo.Userservice'
+1720060469164	Rename package 'com.kh.winepicker.user.model.vo.service'
+1720060635321	Rename package 'com.kh.winepicker.user.model.vo'
+1720060795547	Delete element
+1720061517475	Delete element
+1720075151485	Delete element
+1720075160408	Delete element
+1720075194643	Delete element
+1720081539599	Rename resource 'user-mapper.xml'
+1720081792859	Rename resource 'usermapper.xml'

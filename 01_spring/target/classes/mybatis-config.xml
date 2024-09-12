@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"/>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+	</settings>
+	
+	<typeAliases>
+		<!-- 	===== 별칭 부여 =====
+			: 패키지 경로는 제외하고 클래스이름의 첫글자를 소문자로 바꿔서 별칭을 부여해 줌 
+			com.kh.spring.member.model.vo.Member => member 
+			com.kh.spring.member.model.service.MemberService => memberService
+		-->
+		<package name="com.kh.spring"/>
+	</typeAliases>
+	
+</configuration>
